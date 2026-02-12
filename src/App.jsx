@@ -1,7 +1,8 @@
 import { useState, useMemo } from 'react';
-import { Upload, Users, Instagram, FileJson, Loader2, AlertCircle, ExternalLink } from 'lucide-react';
+import { Upload, Users, Instagram, FileJson, Loader2, AlertCircle, ExternalLink, BarChart2 } from 'lucide-react';
 import JSZip from 'jszip';
 import './App.css';
+import Comparison from './Comparison';
 
 // Generic recursive function to find all user-like objects in any JSON structure
 function extractUsersRecursive(data) {
@@ -84,6 +85,7 @@ function App() {
   const [error, setError] = useState(null);
   const [zipFileName, setZipFileName] = useState('');
   const [debugLog, setDebugLog] = useState([]);
+  const [view, setView] = useState('list'); // 'list' or 'comparison'
 
   const addToLog = (msg) => {
     setDebugLog(prev => [...prev, `${new Date().toLocaleTimeString()}: ${msg}`]);
@@ -239,37 +241,45 @@ function App() {
                 </a>
               ))}
 
-              <button className="reset-btn" onClick={() => { setFileLists(null); setZipFileName(''); }}>
+              <button className="comparison-btn" onClick={() => setView('comparison')}>
+                <BarChart2 size={16} />
+                Comparison
+              </button>
+              <button className="reset-btn" onClick={() => { setFileLists(null); setZipFileName(''); setView('list'); }}>
                 Upload New
               </button>
             </div>
 
-            <div className="file-lists-grid">
-              {Object.entries(fileLists).map(([name, users]) => (
-                <div className="result-card generic" id={name} key={name}>
-                  <div className="card-header">
-                    <div className="header-title">
-                      <Users size={20} />
-                      <h2 className="capitalize">{name.replace(/_/g, ' ')}</h2>
+            {view === 'list' ? (
+              <div className="file-lists-grid">
+                {Object.entries(fileLists).map(([name, users]) => (
+                  <div className="result-card generic" id={name} key={name}>
+                    <div className="card-header">
+                      <div className="header-title">
+                        <Users size={20} />
+                        <h2 className="capitalize">{name.replace(/_/g, ' ')}</h2>
+                      </div>
+                      <span className="count-badge">{users.length}</span>
                     </div>
-                    <span className="count-badge">{users.length}</span>
+                    <div className="user-list">
+                      {users.map((user, idx) => (
+                        <a key={`${name}-${user.username}-${idx}`} href={user.href} target="_blank" rel="noopener noreferrer" className="user-item">
+                          <div className="user-info">
+                            <span className="username">@{user.username}</span>
+                            {user.timestamp > 0 && (
+                              <span className="timestamp">{new Date(user.timestamp * 1000).toLocaleDateString()}</span>
+                            )}
+                          </div>
+                          <ExternalLink size={14} className="link-icon" />
+                        </a>
+                      ))}
+                    </div>
                   </div>
-                  <div className="user-list">
-                    {users.map((user, idx) => (
-                      <a key={`${name}-${user.username}-${idx}`} href={user.href} target="_blank" rel="noopener noreferrer" className="user-item">
-                        <div className="user-info">
-                          <span className="username">@{user.username}</span>
-                          {user.timestamp > 0 && (
-                            <span className="timestamp">{new Date(user.timestamp * 1000).toLocaleDateString()}</span>
-                          )}
-                        </div>
-                        <ExternalLink size={14} className="link-icon" />
-                      </a>
-                    ))}
-                  </div>
-                </div>
-              ))}
-            </div>
+                ))}
+              </div>
+            ) : (
+              <Comparison data={fileLists} onBack={() => setView('list')} />
+            )}
           </div>
         )}
       </main>
